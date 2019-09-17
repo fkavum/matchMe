@@ -6,15 +6,26 @@ public class Board : MonoBehaviour
 {
     public int width;
     public int height;
+    public int borderSize;
+    public float swapTime = 0.5f;
 
     public GameObject tilePrefab;
+    public GameObject[] gamePiecePrefabs;
 
     Tile[,] m_allTiles;
+    GamePiece[,] m_allGamePieces;
     // Start is called before the first frame update
+
+    Tile m_clickedTile;
+    Tile m_targetTile;
+
     void Start()
     {
         m_allTiles = new Tile[width, height];
+        m_allGamePieces = new GamePiece[width, height];
         SetupTiles();
+        SetupCamera();
+        FillRandom();
     }
     
     void SetupTiles()
@@ -27,9 +38,113 @@ public class Board : MonoBehaviour
                 tile.name = "Tile (" + i + "," + j + ")";
                 m_allTiles[i, j] = tile.GetComponent<Tile>();
                 tile.transform.parent = transform;
+                m_allTiles[i, j].Init(i, j, this);
             }
         }
     }
 
+    void SetupCamera()
+    {
+        Camera.main.transform.position = new Vector3((float)(width-1)/2f,(float)(height-1)/2f,-10f);
+        float aspectRatio = (float)Screen.width / (float)Screen.height;
+        float verticalSize = (float)height / 2f + (float)borderSize;
+        float horizontalSize = ((float)width / 2f + (float)borderSize) / aspectRatio;
+        Camera.main.orthographicSize = (verticalSize > horizontalSize) ? verticalSize : horizontalSize;
 
+    }
+
+    GameObject GetRandomGamePiece()
+    {
+        int randomInx = Random.Range(0, gamePiecePrefabs.Length);
+        if(gamePiecePrefabs[randomInx] == null)
+        {
+            Debug.LogWarning("BOARD: " + randomInx + "does not contain a valid GamePiece prefab!");
+        }
+        return gamePiecePrefabs[randomInx];
+    }
+
+    public void PlaceGamePiece(GamePiece gamePiece,int x,int y)
+    {
+        if(gamePiece == null)
+        {
+            Debug.LogWarning("BOARD: Invalid GamePiece!");
+        }
+        gamePiece.transform.position = new Vector3(x, y, 0);
+        gamePiece.transform.rotation = Quaternion.identity;
+        if (IsWithinBounds(x, y)) { 
+        m_allGamePieces[x, y] = gamePiece;
+        }
+        gamePiece.SetCoord(x, y);
+    }
+
+    bool IsWithinBounds(int x,int y)
+    {
+        return (x >= 0 && x < width && y >= 0 && y < height);
+    }
+
+    void FillRandom()
+    {
+        for (int i = 0; i < width; i++)
+        {
+            for (int j = 0; j < height; j++)
+            {
+                GameObject randomPiece = Instantiate(GetRandomGamePiece(), Vector3.zero, Quaternion.identity) as GameObject;
+                if (randomPiece != null)
+                {
+                    randomPiece.GetComponent<GamePiece>().Init(this);
+                    PlaceGamePiece(randomPiece.GetComponent<GamePiece>(), i, j);
+                    randomPiece.transform.parent = transform;
+                }
+            }
+        }
+    }
+
+    public void ClickTile(Tile tile)
+    {
+        if(m_clickedTile == null)
+        {
+            m_clickedTile = tile;
+        }
+    }
+
+    public void DragToTile(Tile tile)
+    {
+        if(m_clickedTile != null && IsNextTo(tile,m_clickedTile))
+        {
+            m_targetTile = tile;
+        }
+    }
+
+    public void ReleaseTile()
+    {
+        if(m_clickedTile != null && m_targetTile != null)
+        {
+            SwitchTiles(m_clickedTile, m_targetTile);
+        }
+
+        m_clickedTile = null;
+        m_targetTile = null;
+    }
+    void SwitchTiles(Tile clickedTile,Tile targetTile)
+    {
+        GamePiece clickedPiece = m_allGamePieces[clickedTile.xIndex, clickedTile.yIndex];
+        GamePiece targetPiece = m_allGamePieces[targetTile.xIndex, targetTile.yIndex];
+
+        clickedPiece.Move(targetTile.xIndex, targetTile.yIndex, swapTime);
+        targetPiece.Move(clickedTile.xIndex, clickedTile.yIndex, swapTime);
+
+    }
+
+    bool IsNextTo(Tile start,Tile end)
+    {
+        if(Mathf.Abs(start.xIndex - end.xIndex) == 1 && start.yIndex == end.yIndex)
+        {
+            return true;
+        }
+        if(Mathf.Abs(start.yIndex - end.yIndex) == 1 && start.xIndex == end.xIndex)
+        {
+            return true;
+        }
+        return false;
+    }
 }
