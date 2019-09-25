@@ -401,6 +401,8 @@ MonoBehaviour:
   height: 9
   borderSize: 2
   swapTime: 0.3
+  fillYOffset: 10
+  fillMoveTime: 0.5
   tileNormalPrefab: {fileID: 6508747463486449595, guid: adfa38c9a7094334ba2e9c873e1ecead,
     type: 3}
   tileObstaclePrefab: {fileID: 6508747463486449595, guid: c2a581993c5ac7140912e8cd4e74146e,
@@ -411,32 +413,54 @@ MonoBehaviour:
   - {fileID: 2131030939244371042, guid: 9dd0a7798872b92469492a937acebe8d, type: 3}
   - {fileID: 9002311523253019504, guid: f22cee4adfa1978499d0d97e2c56d4f6, type: 3}
   - {fileID: 5817836944148663454, guid: 46c8773db5e0a484a98aa465be50c0ff, type: 3}
+  adjacentBombPrefab: {fileID: 5756730033013280555, guid: 0f4a3888d2b49de49a89844b857ae855,
+    type: 3}
+  columnBombPrefab: {fileID: 5756730033013280555, guid: fac686d9442cca54e9df2708356ec49c,
+    type: 3}
+  rowBombPrefab: {fileID: 5756730033013280555, guid: 4128f79455ba7cc4e9dfd1ec721d6938,
+    type: 3}
   startingTiles:
-  - tilePrefab: {fileID: 6508747463486449595, guid: c2a581993c5ac7140912e8cd4e74146e,
+  - prefab: {fileID: 6508747463486449595, guid: c50442bfea3ae434f900ec865e305471,
       type: 3}
     x: 3
     y: 4
     z: 1
-  - tilePrefab: {fileID: 6508747463486449595, guid: c2a581993c5ac7140912e8cd4e74146e,
+  - prefab: {fileID: 6508747463486449595, guid: c50442bfea3ae434f900ec865e305471,
       type: 3}
     x: 5
     y: 5
     z: 1
-  - tilePrefab: {fileID: 6508747463486449595, guid: d795ed38a0af1e049895e30497e0ed14,
+  - prefab: {fileID: 6508747463486449595, guid: c50442bfea3ae434f900ec865e305471,
       type: 3}
     x: 2
     y: 4
     z: 1
-  - tilePrefab: {fileID: 6508747463486449595, guid: d795ed38a0af1e049895e30497e0ed14,
+  - prefab: {fileID: 6508747463486449595, guid: c50442bfea3ae434f900ec865e305471,
       type: 3}
     x: 2
     y: 3
     z: 1
-  - tilePrefab: {fileID: 6508747463486449595, guid: d795ed38a0af1e049895e30497e0ed14,
+  - prefab: {fileID: 6508747463486449595, guid: c50442bfea3ae434f900ec865e305471,
       type: 3}
     x: 2
     y: 2
     z: 1
+  startingGamePieces:
+  - prefab: {fileID: 8020992035722193467, guid: 4c43018413150514880b75a424fc38e7,
+      type: 3}
+    x: 0
+    y: 0
+    z: 0
+  - prefab: {fileID: 8020992035722193467, guid: 4c43018413150514880b75a424fc38e7,
+      type: 3}
+    x: 0
+    y: 1
+    z: 0
+  - prefab: {fileID: 5756730033013280555, guid: 0f4a3888d2b49de49a89844b857ae855,
+      type: 3}
+    x: 1
+    y: 2
+    z: 0
 --- !u!4 &1206325954
 Transform:
   m_ObjectHideFlags: 0
@@ -537,7 +561,7 @@ GameObject:
   - component: {fileID: 2048609620}
   m_Layer: 0
   m_Name: ParticleManager
-  m_TagString: Untagged
+  m_TagString: ParticleManager
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

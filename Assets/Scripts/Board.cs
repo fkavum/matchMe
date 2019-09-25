@@ -9,10 +9,19 @@ public class Board : MonoBehaviour
     public int height;
     public int borderSize;
     public float swapTime = 0.3f;
+    public int fillYOffset = 10;
+    public float fillMoveTime = 0.5f;
 
     public GameObject tileNormalPrefab;
     public GameObject tileObstaclePrefab ;
     public GameObject[] gamePiecePrefabs;
+
+    public GameObject adjacentBombPrefab;
+    public GameObject columnBombPrefab;
+    public GameObject rowBombPrefab;
+
+    GameObject m_clickedTileBomb;
+    GameObject m_targetTileBomb;
 
     Tile[,] m_allTiles;
     GamePiece[,] m_allGamePieces;
@@ -23,12 +32,13 @@ public class Board : MonoBehaviour
 
     bool m_playerInputEnabled = true;
 
-    public StartingTile[] startingTiles;
+    public StartingObject[] startingTiles;
+    public StartingObject[] startingGamePieces;
     private  ParticleManager m_particleManager;
     [System.Serializable]
-    public class StartingTile
+    public class StartingObject
     {
-        public GameObject tilePrefab;
+        public GameObject prefab;
         public int x;
         public int y;
         public int z;
@@ -39,8 +49,9 @@ public class Board : MonoBehaviour
         m_allTiles = new Tile[width, height];
         m_allGamePieces = new GamePiece[width, height];
         SetupTiles();
+        SetupGamePieces();
         SetupCamera();
-        FillBoard(10,0.5f);
+        FillBoard(fillYOffset,fillMoveTime);
         m_particleManager = GameObject.FindWithTag("ParticleManager").GetComponent<ParticleManager>();
         //ClearPieceAt(1,4);
         //ClearPieceAt(3,3);
@@ -49,11 +60,11 @@ public class Board : MonoBehaviour
     
     void SetupTiles()
     {
-        foreach (StartingTile sTile in startingTiles)
+        foreach (StartingObject sTile in startingTiles)
         {
             if(sTile != null)
             {
-                MakeTile(sTile.tilePrefab, sTile.x, sTile.y, sTile.z);
+                MakeTile(sTile.prefab, sTile.x, sTile.y, sTile.z);
             }
         }
 
@@ -71,7 +82,7 @@ public class Board : MonoBehaviour
 
     private void MakeTile(GameObject prefab,int x, int y, int z = 0)
     {
-        if(prefab != null) { 
+        if(prefab != null && IsWithinBounds(x,y)) { 
         GameObject tile = Instantiate(prefab, new Vector3(x, y, z), Quaternion.identity) as GameObject;
         tile.name = "Tile (" + x + "," + y + ")";
         m_allTiles[x, y] = tile.GetComponent<Tile>();
@@ -79,6 +90,52 @@ public class Board : MonoBehaviour
         m_allTiles[x, y].Init(x, y, this);
         }
     }
+
+    void MakeGamePiece(GameObject prefab, int x, int y, int falseYOffset = 0, float moveTime = 0.1f)
+    {
+        if (prefab != null && IsWithinBounds(x, y))
+        {
+            prefab.GetComponent<GamePiece>().Init(this);
+            PlaceGamePiece(prefab.GetComponent<GamePiece>(), x, y);
+
+            if (falseYOffset != 0)
+            {
+                prefab.transform.position = new Vector3(x, y + falseYOffset, 0);
+                prefab.GetComponent<GamePiece>().Move(x, y, moveTime);
+            }
+
+            prefab.transform.parent = transform;
+        }
+    }
+
+    GameObject MakeBomb(GameObject prefab, int x , int y)
+    {
+
+        if(prefab != null && IsWithinBounds(x, y))
+        {
+            GameObject bomb = Instantiate(prefab, new Vector3(x, y, 0), Quaternion.identity) as GameObject;
+            bomb.GetComponent<Bomb>().Init(this);
+            bomb.GetComponent<Bomb>().SetCoord(x, y);
+            bomb.transform.parent = transform;
+            return bomb;
+        }
+
+        return null;
+
+    }
+
+    void SetupGamePieces()
+    {
+        foreach(StartingObject sPiece in startingGamePieces)
+        {
+            if(sPiece != null)
+            {
+                GameObject piece = Instantiate(sPiece.prefab, new Vector3(sPiece.x, sPiece.y, 0), Quaternion.identity) as GameObject;
+                MakeGamePiece(piece, sPiece.x, sPiece.y, fillYOffset, fillMoveTime);
+            }
+        }
+    }
+
 
     void SetupCamera()
     {
@@ -148,25 +205,17 @@ public class Board : MonoBehaviour
         }
     }
 
+
+
     // Initialize random Gamepiece and Place() it
     private GamePiece FillRandomAt(int x, int y, int falseYOffset = 0, float moveTime = 0.1f)
     {
+        if (IsWithinBounds(x, y)) { 
         GameObject randomPiece = Instantiate(GetRandomGamePiece(), Vector3.zero, Quaternion.identity) as GameObject;
-        if (randomPiece != null)
-        {
-            randomPiece.GetComponent<GamePiece>().Init(this);
-            PlaceGamePiece(randomPiece.GetComponent<GamePiece>(), x, y);
 
-            if(falseYOffset != 0)
-            {
-                randomPiece.transform.position = new Vector3(x, y + falseYOffset, 0);
-                randomPiece.GetComponent<GamePiece>().Move(x,y,moveTime);
-            }
-
-            randomPiece.transform.parent = transform;
+        MakeGamePiece(randomPiece, x, y, falseYOffset, moveTime);
             return randomPiece.GetComponent<GamePiece>();
         }
-
         return null;
     }
 
@@ -243,8 +292,24 @@ public class Board : MonoBehaviour
             else
             {
                 yield return new WaitForSeconds(swapTime);
+                    Vector2 swipeDirection = new Vector2(targetTile.xIndex - clickedTile.xIndex, targetTile.yIndex - clickedTile.yIndex);
+                    m_clickedTileBomb = DropBomb(clickedTile.xIndex, clickedTile.yIndex, swipeDirection, clickedPieceMatches);
+                    m_targetTileBomb = DropBomb(targetTile.xIndex, targetTile.yIndex, swipeDirection, targetPieceMatches);
 
-                ClearAndRefillBoard(clickedPieceMatches.Union(targetPieceMatches).ToList());
+                    // TODO: Bu kodun burda olması sadece switch edilen Noktaları bomba yapıyor. Diğerleri bomba olmuyor.
+                    if(m_clickedTileBomb != null && targetPiece != null)
+                    {
+                        GamePiece clickedBombPiece = m_clickedTileBomb.GetComponent<GamePiece>();
+                        clickedBombPiece.ChangeColor(targetPiece);
+                    }
+                    if (m_targetTileBomb != null && clickedPiece != null)
+                    {
+                        GamePiece targetBombPiece = m_targetTileBomb.GetComponent<GamePiece>();
+                        targetBombPiece.ChangeColor(clickedPiece);
+
+                    }
+
+                    ClearAndRefillBoard(clickedPieceMatches.Union(targetPieceMatches).ToList());
                 //ClearPieceAt(clickedPieceMatches);
                 //ClearPieceAt(targetPieceMatches);
                 //
@@ -634,7 +699,7 @@ public class Board : MonoBehaviour
 
      IEnumerator RefillRoutine()
     {
-        FillBoard(10,0.5f);
+        FillBoard(fillYOffset,fillMoveTime);
         //TODO: Burasına padding eklenmeli diye düşünüyorum.
         yield return null;
     }
@@ -650,8 +715,26 @@ public class Board : MonoBehaviour
 
         while (!isFinished)
         {
+            List<GamePiece> bombedPieces = GetBombedPieces(gamePieces);
+            gamePieces = gamePieces.Union(bombedPieces).ToList();
+
+            // TODO: Bir bomba patlayıp başka bir bombayı trigger edince diğer Bomba başkasını trigger edemiyor. Recursive olmalı.
+            // Tekrardan yapıyoruz çünkü yeni patlatcağımız kolon içerisinde başka bombalar olabilir.
+            bombedPieces = GetBombedPieces(gamePieces);
+            gamePieces = gamePieces.Union(bombedPieces).ToList();
+
             ClearPieceAt(gamePieces);
             BreakTileAt(gamePieces);
+            if(m_clickedTileBomb != null)
+            {
+                ActivateBomb(m_clickedTileBomb);
+                m_clickedTileBomb = null;
+            }
+            if (m_targetTileBomb != null)
+            {
+                ActivateBomb(m_targetTileBomb);
+                m_targetTileBomb = null;
+            }
 
             yield return new WaitForSeconds(0.2f);
 
@@ -697,5 +780,178 @@ public class Board : MonoBehaviour
         return true;
     }
 
+
+    List<GamePiece> GetRowPieces(int row)
+    {
+        List<GamePiece> gamePieces = new List<GamePiece>();
+
+        for (int i = 0; i < width; i++)
+        {
+            if(m_allGamePieces[i,row] != null)
+            {
+                gamePieces.Add(m_allGamePieces[i, row]);
+            }
+        }
+
+        return gamePieces;
+    }
+    List<GamePiece> GetColumnPieces(int column)
+    {
+        List<GamePiece> gamePieces = new List<GamePiece>();
+
+        for (int i = 0; i < height; i++)
+        {
+            if (m_allGamePieces[column, i] != null)
+            {
+                gamePieces.Add(m_allGamePieces[column, i]);
+            }
+        }
+
+        return gamePieces;
+    }
+
+    List<GamePiece> GetAdjacentPieces(int x,int y, int offset = 1)
+    {
+
+        List<GamePiece> gamePieces = new List<GamePiece>();
+
+        for (int i = x-offset; i <= x+offset; i++)
+        {
+            for (int j = y-offset; j <= y+offset; j++)
+            {
+                if (IsWithinBounds(i, j))
+                {
+                    gamePieces.Add(m_allGamePieces[i, j]);
+                }
+            }
+        }
+
+        return gamePieces;
+    }
+
+    List <GamePiece> GetBombedPieces(List<GamePiece> gamePieces)
+    {
+        List<GamePiece> allPiecesToClear = new List<GamePiece>();
+
+        foreach (GamePiece piece in gamePieces)
+        {
+            if(piece != null)
+            {
+
+                List<GamePiece> piecesToClear = new List<GamePiece>();
+
+                Bomb bomb = piece.GetComponent<Bomb>();
+
+                if(bomb != null)
+                {
+                    switch (bomb.bombType)
+                    {
+                        case BombType.Column:
+                            piecesToClear = GetColumnPieces(bomb.xIndex);
+                            break;
+                        case BombType.Row:
+                            piecesToClear = GetRowPieces(bomb.yIndex);
+                            break;
+                        case BombType.Adjacent:
+                            piecesToClear = GetAdjacentPieces(bomb.xIndex, bomb.yIndex, 1);
+                            break;
+                        case BombType.Color:
+                            break;
+                    }
+
+                    allPiecesToClear = allPiecesToClear.Union(piecesToClear).ToList();
+                }
+
+            }
+        }
+        return allPiecesToClear;
+
+    }
+
+    bool IsCornerMatch(List<GamePiece> gamePieces)
+    {
+        bool vertical = false;
+        bool horizontal = false;
+        int xStart = -1;
+        int yStart = -1;
+
+        foreach (GamePiece piece in gamePieces)
+        {
+            if(piece != null)
+            {
+                if(xStart == -1 || yStart == -1)
+                {
+                    xStart = piece.xIndex;
+                    yStart = piece.yIndex;
+                    continue;
+                }
+
+                if(piece.xIndex != xStart && piece.yIndex == yStart)
+                {
+                    horizontal = true;
+                }
+                if(piece.xIndex == xStart && piece.yIndex != yStart)
+                {
+                    vertical = true;
+                }
+            }
+        }
+        return (horizontal && vertical);
+    }
+
+    GameObject DropBomb(int x,int y, Vector2 swapDirection, List<GamePiece> gamePieces)
+    {
+        GameObject bomb = null;
+
+        if(gamePieces.Count >= 4)
+        {
+            if (IsCornerMatch(gamePieces))
+            {
+                if(adjacentBombPrefab != null)
+                {
+                    bomb = MakeBomb(adjacentBombPrefab, x, y);
+                }
+            }
+            else
+            {
+                if(swapDirection.x != 0)
+                {
+                    if(rowBombPrefab != null)
+                    {
+                        bomb = MakeBomb(rowBombPrefab, x, y);
+                    }
+                }
+                else
+                {
+                    if(columnBombPrefab != null)
+                    {
+                        bomb = MakeBomb(columnBombPrefab, x, y);
+                    }
+                }
+
+            }
+
+
+
+
+        }
+
+
+
+        return bomb;
+        
+    }
+
+    void ActivateBomb(GameObject bomb)
+    {
+        int x = (int)bomb.transform.position.x;
+        int y = (int)bomb.transform.position.y;
+
+        if (IsWithinBounds(x, y))
+        {
+            m_allGamePieces[x, y] = bomb.GetComponent<GamePiece>();
+        }
+
+    }
 
 }
