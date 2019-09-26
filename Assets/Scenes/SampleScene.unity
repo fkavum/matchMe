@@ -419,6 +419,8 @@ MonoBehaviour:
     type: 3}
   rowBombPrefab: {fileID: 5756730033013280555, guid: 4128f79455ba7cc4e9dfd1ec721d6938,
     type: 3}
+  colorBombPrefab: {fileID: 5756730033013280555, guid: b9b64027462a5d54b9afe0bb780359b9,
+    type: 3}
   startingTiles:
   - prefab: {fileID: 6508747463486449595, guid: c50442bfea3ae434f900ec865e305471,
       type: 3}
@@ -456,10 +458,15 @@ MonoBehaviour:
     x: 0
     y: 1
     z: 0
-  - prefab: {fileID: 5756730033013280555, guid: 0f4a3888d2b49de49a89844b857ae855,
+  - prefab: {fileID: 5756730033013280555, guid: b9b64027462a5d54b9afe0bb780359b9,
       type: 3}
     x: 1
     y: 2
+    z: 0
+  - prefab: {fileID: 5756730033013280555, guid: b9b64027462a5d54b9afe0bb780359b9,
+      type: 3}
+    x: 1
+    y: 3
     z: 0
 --- !u!4 &1206325954
 Transform:
@@ -583,6 +590,8 @@ MonoBehaviour:
   breakFXPrefab: {fileID: 3057815123878337683, guid: aa7f826e1aee0f14fb5236d26353bbb1,
     type: 3}
   doubleBreakFXPrefab: {fileID: 6650044075622922218, guid: 804fac8c792dd904e9a2b15feccabcb3,
+    type: 3}
+  bombFXPrefab: {fileID: 7527611274896546024, guid: 9d8e7d7c288243244b8fef46bd0d76ab,
     type: 3}
 --- !u!4 &2048609621
 Transform:

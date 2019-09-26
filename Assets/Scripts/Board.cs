@@ -19,6 +19,7 @@ public class Board : MonoBehaviour
     public GameObject adjacentBombPrefab;
     public GameObject columnBombPrefab;
     public GameObject rowBombPrefab;
+    public GameObject colorBombPrefab;
 
     GameObject m_clickedTileBomb;
     GameObject m_targetTileBomb;
@@ -283,8 +284,27 @@ public class Board : MonoBehaviour
         yield return new WaitForSeconds(swapTime);
         List<GamePiece> clickedPieceMatches = FindMatchesAt(clickedTile.xIndex, clickedTile.yIndex);
         List<GamePiece> targetPieceMatches = FindMatchesAt(targetTile.xIndex, targetTile.yIndex);
+                List<GamePiece> colorMatches = new List<GamePiece>();
 
-        if(targetPieceMatches.Count == 0 && clickedPieceMatches.Count == 0)
+        if(IsColorBomb(clickedPiece) && !IsColorBomb(targetPiece))
+                {
+                    clickedPiece.matchValue = targetPiece.matchValue;
+                    colorMatches = FindAllMatchValue(clickedPiece.matchValue);
+                }
+        else if(!IsColorBomb(clickedPiece) && IsColorBomb(targetPiece))
+                {
+                    targetPiece.matchValue = clickedPiece.matchValue;
+                    colorMatches = FindAllMatchValue(targetPiece.matchValue);
+                }
+        else if(IsColorBomb(clickedPiece) && IsColorBomb(targetPiece))
+                {
+                    foreach (GamePiece piece in m_allGamePieces)
+                    {
+                        if (!colorMatches.Contains(piece)) { colorMatches.Add(piece); }
+                    }
+                }
+
+        if(targetPieceMatches.Count == 0 && clickedPieceMatches.Count == 0 && colorMatches.Count == 0)
         {
             clickedPiece.Move(clickedTile.xIndex, clickedTile.yIndex,swapTime);
             targetPiece.Move(targetTile.xIndex, targetTile.yIndex,swapTime);
@@ -300,16 +320,22 @@ public class Board : MonoBehaviour
                     if(m_clickedTileBomb != null && targetPiece != null)
                     {
                         GamePiece clickedBombPiece = m_clickedTileBomb.GetComponent<GamePiece>();
+                        if (!IsColorBomb(clickedBombPiece)) { 
                         clickedBombPiece.ChangeColor(targetPiece);
+                        }
                     }
                     if (m_targetTileBomb != null && clickedPiece != null)
                     {
                         GamePiece targetBombPiece = m_targetTileBomb.GetComponent<GamePiece>();
-                        targetBombPiece.ChangeColor(clickedPiece);
+                        if (!IsColorBomb(targetBombPiece))
+                        {
+
+                            targetBombPiece.ChangeColor(clickedPiece);
+                        }
 
                     }
 
-                    ClearAndRefillBoard(clickedPieceMatches.Union(targetPieceMatches).ToList());
+                    ClearAndRefillBoard(clickedPieceMatches.Union(targetPieceMatches).ToList().Union(colorMatches).ToList());
                 //ClearPieceAt(clickedPieceMatches);
                 //ClearPieceAt(targetPieceMatches);
                 //
@@ -562,7 +588,7 @@ public class Board : MonoBehaviour
         }
     }
 
-    void ClearPieceAt(List<GamePiece> gamePieces)
+    void ClearPieceAt(List<GamePiece> gamePieces,List<GamePiece> bombedPieces)
     {
         foreach (GamePiece piece in gamePieces)
         {
@@ -570,7 +596,13 @@ public class Board : MonoBehaviour
                 ClearPieceAt(piece.xIndex, piece.yIndex);
                 if(m_particleManager != null)
                 {
+                    if (bombedPieces.Contains(piece))
+                    {
+                        m_particleManager.BombFXAt(piece.xIndex, piece.yIndex);
+                    }
+                    else { 
                     m_particleManager.ClearPieceFXAt(piece.xIndex, piece.yIndex);
+                    }
                 }
             }
         }
@@ -723,7 +755,7 @@ public class Board : MonoBehaviour
             bombedPieces = GetBombedPieces(gamePieces);
             gamePieces = gamePieces.Union(bombedPieces).ToList();
 
-            ClearPieceAt(gamePieces);
+            ClearPieceAt(gamePieces,bombedPieces);
             BreakTileAt(gamePieces);
             if(m_clickedTileBomb != null)
             {
@@ -914,6 +946,14 @@ public class Board : MonoBehaviour
             }
             else
             {
+                if(gamePieces.Count >= 5)
+                {
+                    if(colorBombPrefab != null)
+                    {
+                        bomb = MakeBomb(colorBombPrefab, x, y);
+                    }
+                }
+                else { 
                 if(swapDirection.x != 0)
                 {
                     if(rowBombPrefab != null)
@@ -928,15 +968,9 @@ public class Board : MonoBehaviour
                         bomb = MakeBomb(columnBombPrefab, x, y);
                     }
                 }
-
+                }
             }
-
-
-
-
         }
-
-
 
         return bomb;
         
@@ -952,6 +986,37 @@ public class Board : MonoBehaviour
             m_allGamePieces[x, y] = bomb.GetComponent<GamePiece>();
         }
 
+    } 
+
+    List<GamePiece> FindAllMatchValue(MatchValue mValue)
+    {
+        List<GamePiece> foundPieces = new List<GamePiece>();
+
+        for (int i = 0; i < width; i++)
+        {
+            for (int j = 0; j < height; j++)
+            {
+                if(m_allGamePieces[i,j] != null)
+                {
+                    if(m_allGamePieces[i,j].matchValue == mValue)
+                    {
+                        foundPieces.Add(m_allGamePieces[i, j]);
+                    }
+                }
+            }
+        }
+
+        return foundPieces;
+    }
+
+    bool IsColorBomb(GamePiece gamePiece)
+    {
+        Bomb bomb = gamePiece.GetComponent<Bomb>();
+        if(bomb != null)
+        {
+            return (bomb.bombType == BombType.Color);
+        }
+        return false;
     }
 
 }
