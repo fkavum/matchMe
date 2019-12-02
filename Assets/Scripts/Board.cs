@@ -42,6 +42,11 @@ public class Board : MonoBehaviour
     public StartingObject[] startingTiles;
     public StartingObject[] startingGamePieces;
     private  ParticleManager m_particleManager;
+
+    int m_scoreMultiplier = 0;
+
+
+
     [System.Serializable]
     public class StartingObject
     {
@@ -55,6 +60,15 @@ public class Board : MonoBehaviour
     {
         m_allTiles = new Tile[width, height];
         m_allGamePieces = new GamePiece[width, height];
+        m_particleManager = GameObject.FindWithTag("ParticleManager").GetComponent<ParticleManager>();
+
+        //ClearPieceAt(1,4);
+        //ClearPieceAt(3,3);
+        //HighlightMatches();
+    }
+
+    public void SetupBoard()
+    {
         SetupTiles();
         SetupGamePieces();
 
@@ -62,13 +76,9 @@ public class Board : MonoBehaviour
         collectibleCount = startingCollectibles.Count;
 
         SetupCamera();
-        FillBoard(fillYOffset,fillMoveTime);
-        m_particleManager = GameObject.FindWithTag("ParticleManager").GetComponent<ParticleManager>();
-        //ClearPieceAt(1,4);
-        //ClearPieceAt(3,3);
-        //HighlightMatches();
+        FillBoard(fillYOffset, fillMoveTime);
     }
-    
+
     void SetupTiles()
     {
         foreach (StartingObject sTile in startingTiles)
@@ -358,6 +368,12 @@ public class Board : MonoBehaviour
             }
             else
             {
+                    // This Else block executes if only we have an successfull moves.
+                    if(GameManager.Instance != null)
+                    {
+                        GameManager.Instance.movesLeft--;
+                        GameManager.Instance.updateMoves();
+                    }
                 yield return new WaitForSeconds(swapTime);
                     Vector2 swipeDirection = new Vector2(targetTile.xIndex - clickedTile.xIndex, targetTile.yIndex - clickedTile.yIndex);
                     m_clickedTileBomb = DropBomb(clickedTile.xIndex, clickedTile.yIndex, swipeDirection, clickedPieceMatches);
@@ -639,9 +655,20 @@ public class Board : MonoBehaviour
     {
         foreach (GamePiece piece in gamePieces)
         {
-            if(piece != null) { 
+            if(piece != null) {
                 ClearPieceAt(piece.xIndex, piece.yIndex);
-                if(m_particleManager != null)
+
+
+                int bonus = 0;
+
+                if(gamePieces.Count >= 4)
+                {
+                    bonus = 20;
+                }
+                
+                piece.ScorePoints(m_scoreMultiplier,bonus);
+
+                if (m_particleManager != null)
                 {
                     if (bombedPieces.Contains(piece))
                     {
@@ -740,6 +767,7 @@ public class Board : MonoBehaviour
         }
 
         return columns;
+        
     }
 
     void ClearAndRefillBoard(List<GamePiece> gamePieces)
@@ -747,6 +775,9 @@ public class Board : MonoBehaviour
         StartCoroutine(ClearAndRefillBoardRoutine(gamePieces));
     }
 
+    /**
+     * Her bi Refill olma durumu
+     */
     IEnumerator ClearAndRefillBoardRoutine(List<GamePiece> gamePieces)
     {
         
@@ -754,8 +785,11 @@ public class Board : MonoBehaviour
         List<GamePiece> matches = gamePieces;
         int iterations = 0;
         int maxIterations = 5;
+        m_scoreMultiplier = 0;
         do
         {
+            m_scoreMultiplier++;
+
             yield return StartCoroutine(ClearAndCollapseRoutine(matches));
             yield return null;
             yield return StartCoroutine(RefillRoutine());
@@ -803,7 +837,13 @@ public class Board : MonoBehaviour
             gamePieces = gamePieces.Union(bombedPieces).ToList();
 
 
-            List<GamePiece> collectedPieces = FindCollectiblesAt(0);
+            List<GamePiece> collectedPieces = FindCollectiblesAt(0,true);
+
+            // We are doing the below three line just for descrease collectible count properly.
+            List<GamePiece> allCollectibles = FindAllCollectibles();
+            List<GamePiece> blockers = gamePieces.Intersect(allCollectibles).ToList();
+            collectedPieces = collectedPieces.Union(blockers).ToList();
+
             collectibleCount -= collectedPieces.Count;
 
             gamePieces = gamePieces.Union(collectedPieces).ToList();
@@ -833,8 +873,9 @@ public class Board : MonoBehaviour
             yield return new WaitForSeconds(0.2f);
 
             matches = FindMatchesAt(movingPieces);
-            collectedPieces = FindCollectiblesAt(0);
+            collectedPieces = FindCollectiblesAt(0, true);
             matches = matches.Union(collectedPieces).ToList();
+            // Collectible Count Düşürülmüyor acaba neden?
 
             if(matches.Count == 0)
             {
@@ -843,6 +884,7 @@ public class Board : MonoBehaviour
             }
             else
             {
+                m_scoreMultiplier++;
                 yield return StartCoroutine(ClearAndCollapseRoutine(matches)); 
             }
 
@@ -1076,7 +1118,7 @@ public class Board : MonoBehaviour
         return false;
     }
 
-    List<GamePiece> FindCollectiblesAt(int row)
+    List<GamePiece> FindCollectiblesAt(int row, bool clearedAtBottomOnly = false)
     {
         List<GamePiece> foundCollectibles = new List<GamePiece>();
 
@@ -1087,7 +1129,9 @@ public class Board : MonoBehaviour
                 Collectible collectibleComponent = m_allGamePieces[i, row].GetComponent<Collectible>();
                 if(collectibleComponent != null)
                 {
+                    if(!clearedAtBottomOnly || (clearedAtBottomOnly && collectibleComponent.clearedAtBottom)) { 
                     foundCollectibles.Add(m_allGamePieces[i, row]);
+                    }
                 }
             }
         }
