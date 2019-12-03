@@ -1,7 +1,7 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
+using System.Collections;
 
+// the various bombs available in the Game
 public enum BombType
 {
     None,
@@ -9,10 +9,12 @@ public enum BombType
     Row,
     Adjacent,
     Color
+
 }
 
-public class Bomb : GamePiece
+// the Bomb is just a GamePiece with a BombType exposed
+public class Bomb : GamePiece 
 {
-
     public BombType bombType;
+
 }

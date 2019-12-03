@@ -1,14 +1,20 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
+using System.Collections;
 
-public class Collectible : GamePiece
+// a Collectible is just a GamePiece with no match value
+
+// it could be either cleared by a Bomb and/or cleared at the bottom of the screen
+
+public class Collectible : GamePiece 
 {
     public bool clearedByBomb = false;
     public bool clearedAtBottom = true;
 
-    private void Start()
+
+    // Use this for initialization
+    void Start () 
     {
         matchValue = MatchValue.None;
     }
+
 }

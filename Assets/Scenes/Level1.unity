@@ -265,6 +265,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   scoreText: {fileID: 669066966}
+  countTime: 1
 --- !u!1 &519420028
 GameObject:
   m_ObjectHideFlags: 0
@@ -826,11 +827,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   width: 7
-  height: 9
-  borderSize: 2
-  swapTime: 0.3
-  fillYOffset: 10
-  fillMoveTime: 0.5
+  height: 7
+  borderSize: 1
   tileNormalPrefab: {fileID: 6508747463486449595, guid: adfa38c9a7094334ba2e9c873e1ecead,
     type: 3}
   tileObstaclePrefab: {fileID: 6508747463486449595, guid: c2a581993c5ac7140912e8cd4e74146e,
@@ -855,6 +853,7 @@ MonoBehaviour:
   collectiblePrefabs:
   - {fileID: 5930839120550425490, guid: ffea385df7239de42a312f1605b529b5, type: 3}
   - {fileID: 5930839120550425490, guid: dee750b6d8acc9a42b28ce04db99b67c, type: 3}
+  swapTime: 0.3
   startingTiles:
   - prefab: {fileID: 6508747463486449595, guid: c50442bfea3ae434f900ec865e305471,
       type: 3}
@@ -902,6 +901,8 @@ MonoBehaviour:
     x: 1
     y: 3
     z: 0
+  fillYOffset: 10
+  fillMoveTime: 0.5
 --- !u!4 &1206325954
 Transform:
   m_ObjectHideFlags: 0
@@ -1441,13 +1442,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 97c8882bfeebba74d866eafbfa1f8408, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  movesLeft: 25
-  scoreGoal: 50
+  movesLeft: 2
+  scoreGoal: 500
   screenFader: {fileID: 562826469}
   levelNameText: {fileID: 1409358719}
   movesLeftText: {fileID: 2116102653}
   messageWindow: {fileID: 681213227}
-  looseIcon: {fileID: 21300000, guid: 3d1480a1c66cd9d4f8d836d20198b9b1, type: 3}
+  loseIcon: {fileID: 21300000, guid: 3d1480a1c66cd9d4f8d836d20198b9b1, type: 3}
   winIcon: {fileID: 21300000, guid: 9a6df3bb85c752a4886f6e0b2ba3aa9f, type: 3}
   goalIcon: {fileID: 21300000, guid: fcd2cb29b702cad4db13cdf296d1320d, type: 3}
 --- !u!1 &2048609619

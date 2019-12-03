@@ -1,65 +1,74 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
+using System.Collections;
 
-public class ScoreManager : Singleton<ScoreManager>
+// Singleton manager class to keep track of our score
+public class ScoreManager : Singleton<ScoreManager> 
 {
-    // Real Number
+    // our current score
     int m_currentScore = 0;
+
+    // read-only Property to refer to our current score publicly
     public int CurrentScore
     {
         get
         {
             return m_currentScore;
         }
-       
     }
 
-
-    // ShowOff of currentScore in GUI
+    // used to hold a "counter" show the score increment upward to current score
     int m_counterValue = 0;
-    int m_increment = 5;
 
+    // amount to increment the counter
+    int m_increment = 1;
+
+    // UI.Text that shows the score
     public Text scoreText;
 
-    private void Start()
+
+    public float countTime = 1f;
+
+    // Use this for initialization
+    void Start () 
     {
-        UpdateScoreText(m_currentScore);
+        UpdateScoreText (m_currentScore);
     }
 
+    // update the UI score Text
     public void UpdateScoreText(int scoreValue)
     {
-        if(scoreText != null)
+        if (scoreText != null) 
         {
-            scoreText.text = scoreValue.ToString();
+            scoreText.text = scoreValue.ToString ();
         }
     }
 
-    /**
-     * Add to Add REAL score.
-     */
+    // add a value to the current score
     public void AddScore(int value)
     {
         m_currentScore += value;
-        StartCoroutine(CountScoreRoutine());
+        StartCoroutine (CountScoreRoutine ());
     }
 
+    // coroutine shows the score counting up the currentScore value
     IEnumerator CountScoreRoutine()
     {
         int iterations = 0;
 
-        while (m_counterValue < m_currentScore && iterations < 100000)
+        // if we are less than the current score (and we haven't taken too long to get there)...
+        while (m_counterValue < m_currentScore && iterations < 100000) 
         {
             m_counterValue += m_increment;
-            UpdateScoreText(m_counterValue);
+            UpdateScoreText (m_counterValue);
             iterations++;
             yield return null;
-
         }
 
+        //... set the counter equal to the currentScore and update the score Text
         m_counterValue = m_currentScore;
-        UpdateScoreText(m_currentScore);
+        UpdateScoreText (m_currentScore);
+
     }
 
 }

@@ -1,27 +1,28 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
+using System.Collections;
 
+// this is a UI component that can show a message, icon and button
 [RequireComponent(typeof(RectXformMover))]
-public class MessageWindow : MonoBehaviour
+public class MessageWindow : MonoBehaviour 
 {
-
     public Image messageIcon;
     public Text messageText;
     public Text buttonText;
 
     public void ShowMessage(Sprite sprite = null, string message = "", string buttonMsg = "start")
     {
-        if(messageIcon != null)
+        if (messageIcon != null) 
         {
             messageIcon.sprite = sprite;
         }
+
         if (messageText != null)
         {
             messageText.text = message;
         }
-        if (messageIcon != null)
+			
+        if (buttonText != null)
         {
             buttonText.text = buttonMsg;
         }

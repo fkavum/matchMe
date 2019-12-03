@@ -1,168 +1,234 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
-public class GameManager : Singleton<GameManager>
-{
+using System.Collections;
 
-    public int movesLeft = 30;
-        public int scoreGoal = 10000;
+// the GameManager is the master controller for the GamePlay
 
-    public ScreenFader screenFader;
-    public Text levelNameText;
-    public Text movesLeftText;
+public class GameManager : Singleton<GameManager> {
 
+    // number of moves left before Game Over
+	public int movesLeft = 30;
 
+    // goal to reach to meet Game Win condition
+	public int scoreGoal = 10000;
 
-    Board m_board;
+    // reference to graphic that fades in and out 
+	public ScreenFader screenFader;
 
-    bool m_isReadyToBegin = false;
-    bool m_isGameOver = false;
-    bool m_isWinner = false;
+    // UI.Text that stores the level name
+	public Text levelNameText;
+
+    // UI.Text that shows how many moves are left
+	public Text movesLeftText;
+
+    // reference to the Board
+	Board m_board;
+
+    // is the player read to play?
+	bool m_isReadyToBegin = false;
+
+    // is the game over?
+	bool m_isGameOver = false;
+
+    // do we have a winner?
+	bool m_isWinner = false;
+
+    // are we ready to load/reload a new level?
     bool m_isReadyToReload = false;
 
-
+    // reference to the custom UI window 
     public MessageWindow messageWindow;
 
-    public Sprite looseIcon;
+    // sprite for losers
+    public Sprite loseIcon;
+
+    // sprite for winners
     public Sprite winIcon;
+
+    // sprite for the level goal
     public Sprite goalIcon;
 
-    // Start is called before the first frame update
-    void Start()
-    {
-        m_board = GameObject.FindObjectOfType<Board>().GetComponent<Board>();
-        Scene scene = SceneManager.GetActiveScene();
 
-        if(levelNameText != null)
-        {
-            levelNameText.text = scene.name;
-        }
-        updateMoves();
-        StartCoroutine("ExecuteGameLoop");
-    }
+	void Start () 
+	{
+        // cache a reference to the Board
+		m_board = GameObject.FindObjectOfType<Board>().GetComponent<Board>();
 
-    public void updateMoves()
-    {
-        if(movesLeftText != null)
-        {
-            movesLeftText.text = movesLeft.ToString();
-        }
-    }
+        // get a reference to the current Scene
+		Scene scene = SceneManager.GetActiveScene();
 
-    IEnumerator ExecuteGameLoop()
-    {
-        yield return StartCoroutine("StartGameRoutine");
-        yield return StartCoroutine("PlayGameRoutine");
-        yield return StartCoroutine("EndGameRoutine");
-    }
+        // use the Scene name as the Level name
+		if (levelNameText != null) 
+		{
+			levelNameText.text = scene.name;
+		}
 
+        // update the moves left UI
+		UpdateMoves ();
 
+        // start the main game loop
+		StartCoroutine ("ExecuteGameLoop");
+	}
+
+    // update the Text component that shows our moves left
+	public void UpdateMoves()
+	{
+		if (movesLeftText != null) 
+		{
+			movesLeftText.text = movesLeft.ToString ();
+
+		}
+	}
+
+    // this is the main coroutine for the Game, that determines are basic beginning/middle/end
+
+    // each stage of the game must complete before we advance to the next stage
+    // add as many stages here as necessary
+
+	IEnumerator ExecuteGameLoop()
+	{
+		yield return StartCoroutine ("StartGameRoutine");
+		yield return StartCoroutine ("PlayGameRoutine");
+		yield return StartCoroutine ("EndGameRoutine");
+	}
+
+    // switches ready to begin status to true
     public void BeginGame()
     {
         m_isReadyToBegin = true;
+
     }
-    IEnumerator StartGameRoutine()
-    {
-        if(messageWindow != null)
+
+    // coroutine for the level introduction
+	IEnumerator StartGameRoutine()
+	{
+        // show the message window with the level goal
+        if (messageWindow != null)
         {
             messageWindow.GetComponent<RectXformMover>().MoveOn();
-            messageWindow.ShowMessage(goalIcon, "score goal \n" + scoreGoal.ToString(), "start");
-        }
-        else
-        {
-            Debug.LogWarning("Message Window is missing in the gameManager");
+            messageWindow.ShowMessage(goalIcon, "score goal\n" + scoreGoal.ToString(), "start");
         }
 
+        // wait until the player is ready
+		while (!m_isReadyToBegin) 
+		{
+			yield return null;
+		}
 
-        while (!m_isReadyToBegin) { 
-            yield return null;
-   
-        }
+        // fade off the ScreenFader
+		if (screenFader != null) 
+		{
+			screenFader.FadeOff ();
+		}
 
-        if(screenFader != null)
-        {
-            screenFader.FadeOff();
-        }
-        yield return new WaitForSeconds(1f);
-        if(m_board != null)
-        {
-            m_board.SetupBoard();
-        }
-    }
-    IEnumerator PlayGameRoutine()
-    {
-        while (!m_isGameOver)
-        {
+        // wait half a second
+		yield return new WaitForSeconds (0.5f);
+
+		// setup the Board
+        if (m_board != null) 
+		{
+			m_board.SetupBoard ();
+		}
+	}
+
+    // coroutine for game play
+	IEnumerator PlayGameRoutine()
+	{
+        // while the end game condition is not true, we keep playing
+        // just keep waiting one frame and checking for game conditions
+		while (!m_isGameOver) 
+		{
+            // if our current score is greater than the level goal, then we win and end the game
             if (ScoreManager.Instance != null)
             {
-                if(ScoreManager.Instance.CurrentScore >= scoreGoal)
+                if (ScoreManager.Instance.CurrentScore >= scoreGoal)
                 {
                     m_isGameOver = true;
                     m_isWinner = true;
                 }
             }
 
-            if(movesLeft == 0)
-            {
-                m_isGameOver = true;
-                m_isWinner = false;
-            }
+            // if we run out of moves, then we lose and end the game
+			if (movesLeft == 0) 
+			{
+				m_isGameOver = true;
+				m_isWinner = false;
+			}
 
-            yield return null;
-        }
-    }
-    IEnumerator EndGameRoutine()
-    {
+            // wait one frame
+			yield return null;
+		}
+	}
+
+    // coroutine for the end of the level
+	IEnumerator EndGameRoutine()
+	{
+        // set ready to reload to false to give the player time to read the screen
         m_isReadyToReload = false;
-    
 
-        if (m_isWinner)
-        {
-           if(messageWindow != null)
+
+        // if player beat the level goals, show the win screen and play the win sound
+		if (m_isWinner) 
+		{
+            if (messageWindow != null)
             {
                 messageWindow.GetComponent<RectXformMover>().MoveOn();
                 messageWindow.ShowMessage(winIcon, "YOU WIN!", "OK");
             }
 
-           if(SoundManager.Instance != null)
+            if (SoundManager.Instance != null)
             {
                 SoundManager.Instance.PlayWinSound();
             }
-
-        }
-        else
-        {
+		} 
+        // otherwise, show the lose screen and play the lose sound
+		else 
+		{
             if (messageWindow != null)
             {
                 messageWindow.GetComponent<RectXformMover>().MoveOn();
-                messageWindow.ShowMessage(winIcon, "YOU LOOSE!", "OK");
+                messageWindow.ShowMessage(loseIcon, "YOU LOSE!", "OK");
             }
 
             if (SoundManager.Instance != null)
             {
                 SoundManager.Instance.PlayLoseSound();
             }
-
-        }
+		}
+        // wait one second
         yield return new WaitForSeconds(1f);
-        if (screenFader != null)
+
+        // fade the screen 
+        if (screenFader != null) 
         {
-            screenFader.FadeOn();
+            screenFader.FadeOn ();
         }
 
+        // wait until read to reload
         while (!m_isReadyToReload)
         {
             yield return null;
         }
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
-        yield return null;
-    }
 
+        // reload the scene (you would customize this to go back to the menu or go to the next level
+        // but we just reload the same scene in this demo
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+		
+	}
+
+    // use this to acknowledge that the player is ready to reload
     public void ReloadScene()
     {
         m_isReadyToReload = true;
     }
+
+
+
+
+
+
+
+
 
 }
