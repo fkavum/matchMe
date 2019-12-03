@@ -20,7 +20,14 @@ public class GameManager : Singleton<GameManager>
     bool m_isReadyToBegin = false;
     bool m_isGameOver = false;
     bool m_isWinner = false;
+    bool m_isReadyToReload = false;
 
+
+    public MessageWindow messageWindow;
+
+    public Sprite looseIcon;
+    public Sprite winIcon;
+    public Sprite goalIcon;
 
     // Start is called before the first frame update
     void Start()
@@ -51,12 +58,27 @@ public class GameManager : Singleton<GameManager>
         yield return StartCoroutine("EndGameRoutine");
     }
 
+
+    public void BeginGame()
+    {
+        m_isReadyToBegin = true;
+    }
     IEnumerator StartGameRoutine()
     {
+        if(messageWindow != null)
+        {
+            messageWindow.GetComponent<RectXformMover>().MoveOn();
+            messageWindow.ShowMessage(goalIcon, "score goal \n" + scoreGoal.ToString(), "start");
+        }
+        else
+        {
+            Debug.LogWarning("Message Window is missing in the gameManager");
+        }
+
+
         while (!m_isReadyToBegin) { 
             yield return null;
-            yield return new WaitForSeconds(0.5f);
-            m_isReadyToBegin = true;
+   
         }
 
         if(screenFader != null)
@@ -73,6 +95,15 @@ public class GameManager : Singleton<GameManager>
     {
         while (!m_isGameOver)
         {
+            if (ScoreManager.Instance != null)
+            {
+                if(ScoreManager.Instance.CurrentScore >= scoreGoal)
+                {
+                    m_isGameOver = true;
+                    m_isWinner = true;
+                }
+            }
+
             if(movesLeft == 0)
             {
                 m_isGameOver = true;
@@ -84,20 +115,54 @@ public class GameManager : Singleton<GameManager>
     }
     IEnumerator EndGameRoutine()
     {
-        if(screenFader != null)
+        m_isReadyToReload = false;
+    
+
+        if (m_isWinner)
+        {
+           if(messageWindow != null)
+            {
+                messageWindow.GetComponent<RectXformMover>().MoveOn();
+                messageWindow.ShowMessage(winIcon, "YOU WIN!", "OK");
+            }
+
+           if(SoundManager.Instance != null)
+            {
+                SoundManager.Instance.PlayWinSound();
+            }
+
+        }
+        else
+        {
+            if (messageWindow != null)
+            {
+                messageWindow.GetComponent<RectXformMover>().MoveOn();
+                messageWindow.ShowMessage(winIcon, "YOU LOOSE!", "OK");
+            }
+
+            if (SoundManager.Instance != null)
+            {
+                SoundManager.Instance.PlayLoseSound();
+            }
+
+        }
+        yield return new WaitForSeconds(1f);
+        if (screenFader != null)
         {
             screenFader.FadeOn();
         }
 
-        if (m_isWinner)
+        while (!m_isReadyToReload)
         {
-            Debug.Log("You WIN!");
+            yield return null;
         }
-        else
-        {
-            Debug.Log("You Loose!");
-        }
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
         yield return null;
+    }
+
+    public void ReloadScene()
+    {
+        m_isReadyToReload = true;
     }
 
 }
