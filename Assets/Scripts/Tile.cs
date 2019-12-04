@@ -107,7 +107,7 @@ public class Tile : MonoBehaviour {
 
 		yield return new WaitForSeconds(0.25f);
 
-		if (breakableSprites[breakableValue] !=null)
+		if (breakableSprites[breakableValue] != null)
 		{
 			m_spriteRenderer.sprite = breakableSprites[breakableValue];
 		}

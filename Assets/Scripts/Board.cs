@@ -309,7 +309,7 @@ public class Board : MonoBehaviour
 	{
 		if (IsWithinBounds(x,y))
 		{
-			GameObject randomPiece = Instantiate(GetRandomCollectible(), Vector3.zero, Quaternion.identity) as GameObject;
+			GameObject randomPiece = Instantiate(GetRandomCollectible(), Vector3.zero, Quaternion.identity);
 			MakeGamePiece( randomPiece, x, y, falseYOffset, moveTime);
 			return randomPiece.GetComponent<GamePiece>();
 		}
