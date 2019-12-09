@@ -8,6 +8,7 @@
       <e p="Assets" t="Include">
         <e p="Scripts" t="Include">
           <e p="Board.cs" t="Include" />
+          <e p="BoardDeadlock.cs" t="Include" />
           <e p="Bomb.cs" t="Include" />
           <e p="Collectible.cs" t="Include" />
           <e p="GameManager.cs" t="Include" />

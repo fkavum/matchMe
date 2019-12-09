@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
+[RequireComponent(typeof(BoardDeadlock))]
 public class Board : MonoBehaviour 
 {
 
@@ -91,6 +92,8 @@ public class Board : MonoBehaviour
 
     public bool isRefilling = false;
 
+    BoardDeadlock m_boardDeadlock;
+
     // this is a generic GameObject that can be positioned at coordinate (x,y,z) when the game begins
 	[System.Serializable]
 	public class StartingObject
@@ -112,6 +115,8 @@ public class Board : MonoBehaviour
 
         // find the ParticleManager by Tag
 		m_particleManager = GameObject.FindWithTag("ParticleManager").GetComponent<ParticleManager>();
+
+        m_boardDeadlock = GetComponent<BoardDeadlock>();
 	}
 
     // This function sets up the Board.
@@ -805,6 +810,11 @@ public class Board : MonoBehaviour
 			for (int j = 0; j < height; j++)
 			{
 				ClearPieceAt(i,j);
+
+                if (m_particleManager != null)
+                {
+                    m_particleManager.ClearPieceFXAt(i, j);
+                }
 			}
 		}
 	}
@@ -1000,6 +1010,20 @@ public class Board : MonoBehaviour
 		}
         // .. while our list of matches still has GamePieces in it
 		while (matches.Count != 0);
+
+        // deadlock check
+
+        if (m_boardDeadlock.IsDeadlocked(m_allGamePieces, 3))
+        {
+            yield return new WaitForSeconds(3f);
+            ClearBoard();
+
+            yield return new WaitForSeconds(1f);
+
+            yield return StartCoroutine(RefillRoutine());
+        }
+
+
 
         // re-enable player input
 		m_playerInputEnabled = true;
@@ -1502,7 +1526,10 @@ public class Board : MonoBehaviour
     }
 
 
-
+    public void TestDeadlock()
+    {
+        m_boardDeadlock.IsDeadlocked(m_allGamePieces, 3);
+    }
 
 
 
