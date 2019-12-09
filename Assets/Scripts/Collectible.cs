@@ -7,14 +7,14 @@ using System.Collections;
 
 public class Collectible : GamePiece 
 {
-    public bool clearedByBomb = false;
-    public bool clearedAtBottom = true;
+	public bool clearedByBomb = false;
+	public bool clearedAtBottom = true;
 
 
-    // Use this for initialization
-    void Start () 
-    {
-        matchValue = MatchValue.None;
-    }
+	// Use this for initialization
+	void Start () 
+	{
+		matchValue = MatchValue.None;
+	}
 
 }

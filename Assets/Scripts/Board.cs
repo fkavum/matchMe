@@ -22,14 +22,14 @@ public class Board : MonoBehaviour
     // array of dot Prefabs
 	public GameObject[] gamePiecePrefabs;
 
-    // Prefab FX for an adjacent bomb
-	public GameObject adjacentBombPrefab;
+    // Prefab array for adjacent bombs
+	public GameObject[] adjacentBombPrefabs;
 
-    // Prefab FX for a column clearing bomb
-	public GameObject columnBombPrefab;
+    // Prefab array for column clearing bombs
+	public GameObject[] columnBombPrefabs;
 
-    // Prefab FX for a row clearing bomb
-	public GameObject rowBombPrefab;
+    // Prefab array for row clearing bombs
+	public GameObject[] rowBombPrefabs;
 	
     // Prefab bomb FX for clearing a single color from the Board
     public GameObject colorBombPrefab;
@@ -88,6 +88,8 @@ public class Board : MonoBehaviour
 
     // the current score multiplier, depending on how many chain reactions we have caused
 	int m_scoreMultiplier = 0;
+
+    public bool isRefilling = false;
 
     // this is a generic GameObject that can be positioned at coordinate (x,y,z) when the game begins
 	[System.Serializable]
@@ -309,7 +311,7 @@ public class Board : MonoBehaviour
 	{
 		if (IsWithinBounds(x,y))
 		{
-			GameObject randomPiece = Instantiate(GetRandomCollectible(), Vector3.zero, Quaternion.identity);
+			GameObject randomPiece = Instantiate(GetRandomCollectible(), Vector3.zero, Quaternion.identity) as GameObject;
 			MakeGamePiece( randomPiece, x, y, falseYOffset, moveTime);
 			return randomPiece.GetComponent<GamePiece>();
 		}
@@ -333,21 +335,21 @@ public class Board : MonoBehaviour
 				// if the space is unoccupied and does not contain an Obstacle tile 			
                 if (m_allGamePieces[i, j] == null && m_allTiles[i, j].tileType != TileType.Obstacle)
                 {
-                    GamePiece piece = null;
+                    //GamePiece piece = null;
 					
 					// if we are at the top row, check if we can drop a collectible...
                     if (j == height - 1 && CanAddCollectible())
                     {
 					
 						// add a random collectible prefab
-                        piece = FillRandomCollectibleAt(i, j, falseYOffset, moveTime);
+                        FillRandomCollectibleAt(i, j, falseYOffset, moveTime);
                         collectibleCount++;
                     }
 					
 					// ...otherwise, fill in a game piece prefab
                     else
                     {
-                        piece = FillRandomGamePieceAt(i, j, falseYOffset, moveTime);
+                        FillRandomGamePieceAt(i, j, falseYOffset, moveTime);
                         iterations = 0;
 
 						// if we form a match while filling in the new piece...
@@ -355,7 +357,7 @@ public class Board : MonoBehaviour
                         {
 							// remove the piece and try again
                             ClearPieceAt(i, j);
-                            piece = FillRandomGamePieceAt(i, j, falseYOffset, moveTime);
+                            FillRandomGamePieceAt(i, j, falseYOffset, moveTime);
 							
 							// check to prevent infinite loop
                             iterations++;
@@ -437,7 +439,7 @@ public class Board : MonoBehaviour
 	IEnumerator SwitchTilesRoutine(Tile clickedTile, Tile targetTile)
 	{
         // if the player input is enabled...
-		if (m_playerInputEnabled)
+        if (m_playerInputEnabled && !GameManager.Instance.IsGameOver)
 		{
             // set the corresponding GamePieces to the clicked Tile and target Tile
 			GamePiece clickedPiece = m_allGamePieces[clickedTile.xIndex,clickedTile.yIndex];
@@ -929,6 +931,16 @@ public class Board : MonoBehaviour
 		return movingPieces;
 	}
 
+    List<GamePiece> CollapseColumn(List<int> columnsToCollapse)
+    {
+        List<GamePiece> movingPieces = new List<GamePiece>();
+        foreach (int column in columnsToCollapse)
+        {
+            movingPieces = movingPieces.Union(CollapseColumn(column)).ToList();
+        }
+        return movingPieces;
+    }
+
     // given a List of GamePieces, return a list of columns by index number
 	List<int> GetColumns (List<GamePiece> gamePieces)
 	{
@@ -936,10 +948,13 @@ public class Board : MonoBehaviour
 
 		foreach (GamePiece piece in gamePieces)
 		{
+            if (piece != null)
+            {
 			if (!columns.Contains(piece.xIndex))
 			{
 				columns.Add(piece.xIndex);
 			}
+		}
 		}
 		return columns;
 	}
@@ -955,6 +970,8 @@ public class Board : MonoBehaviour
 	{
         // disable player input so we cannot swap pieces while the Board is collapsing/refilling
 		m_playerInputEnabled = false;
+
+        isRefilling = true;
 
         // create a new List of GamePieces, using our initial list as a starting point
 		List<GamePiece> matches = gamePieces;
@@ -986,6 +1003,8 @@ public class Board : MonoBehaviour
 
         // re-enable player input
 		m_playerInputEnabled = true;
+
+        isRefilling = false;
 
 	}
 
@@ -1030,6 +1049,9 @@ public class Board : MonoBehaviour
             // add these collectibles to the list of GamePieces to clear
 			gamePieces = gamePieces.Union(collectedPieces).ToList();
 
+            // store what columns need to be collapsed
+            List<int> columnsToCollapse = GetColumns(gamePieces);
+
             // clear the GamePieces, pass in the list of GamePieces affected by bombs as a separate list
 			ClearPieceAt(gamePieces, bombedPieces);
 
@@ -1053,15 +1075,19 @@ public class Board : MonoBehaviour
             // after a delay, collapse the columns to remove any empty spaces
 			yield return new WaitForSeconds(0.25f);
 
-			movingPieces = CollapseColumn(gamePieces);
+            // collapse any columns with empty spaces and keep track of what pieces moved as a result
+            movingPieces = CollapseColumn(columnsToCollapse);
+
+            // wait while these pieces fill in the gaps
 			while (!IsCollapsed(movingPieces))
 			{
 				yield return null;
 			}
 
-            // find any matches that form from collapsing...
 			yield return new WaitForSeconds(0.2f);
 
+
+            // find any matches that form from collapsing...
 			matches = FindMatchesAt(movingPieces);
 
             //...and any collectibles that hit the bottom row...
@@ -1264,49 +1290,58 @@ public class Board : MonoBehaviour
 	{
         
 		GameObject bomb = null;
+        MatchValue matchValue = MatchValue.None;
+
+        if (gamePieces != null)
+        {
+            matchValue = FindMatchValue(gamePieces);
+        }
 
         // check if the GamePieces are four or more in a row
-		if (gamePieces.Count >= 4)
+        if (gamePieces.Count >= 5 && matchValue != MatchValue.None)
 		{
             // check if we form a corner match and create an adjacent bomb
 			if (IsCornerMatch(gamePieces))
 			{
-				if (adjacentBombPrefab !=null)
+                GameObject adjacentBomb = FindGamePieceByMatchValue(adjacentBombPrefabs, matchValue);
+
+                if (adjacentBomb != null)
 				{
-					bomb = MakeBomb(adjacentBombPrefab, x, y);
+                    bomb = MakeBomb(adjacentBomb, x, y);
 				}
 			}
 			else
 			{
                 // if have five or more in a row, form a color bomb - note we probably should swap this upward to 
                 // give it priority over an adjacent bomb
-				if (gamePieces.Count >= 5)
-				{
+
 					if (colorBombPrefab !=null)
 					{
 						bomb = MakeBomb(colorBombPrefab, x, y);
 
 					}
 				}
-				else
+        }
+
+        else if (gamePieces.Count == 4 && matchValue != MatchValue.None)
 				{
                     // otherwise, drop a row bomb if we are swiping sideways
 					if (swapDirection.x != 0)
 					{
-						if (rowBombPrefab !=null)
+                GameObject rowBomb = FindGamePieceByMatchValue(rowBombPrefabs, matchValue);
+				if (rowBomb !=null)
 						{
-							bomb = MakeBomb(rowBombPrefab, x, y);
+					bomb = MakeBomb(rowBomb, x, y);
 						}
 
 					}
 					else
 					{
+                GameObject columnBomb = FindGamePieceByMatchValue(columnBombPrefabs, matchValue);
                         // or drop a vertical bomb if we are swiping upwards
-						if (columnBombPrefab !=null)
+				if (columnBomb !=null)
 						{
-							bomb = MakeBomb(columnBombPrefab, x, y);
-						}
-					}
+					bomb = MakeBomb(columnBomb, x, y);
 				}
 			}
 		}
@@ -1426,4 +1461,50 @@ public class Board : MonoBehaviour
 		}
 		return bombedPieces.Except(piecesToRemove).ToList();
 	}
+
+    // given a list of GamePieces, return the first valid MatchValue found
+    MatchValue FindMatchValue(List<GamePiece> gamePieces)
+    {
+        foreach (GamePiece piece in gamePieces)
+        {
+            if (piece != null)
+            {
+                return piece.matchValue;
+            }
+        }
+
+        return MatchValue.None;
+    }
+
+    // given an array of prefabs, find one whose GamePiece component has a given matchValue
+    GameObject FindGamePieceByMatchValue(GameObject[] gamePiecePrefabs, MatchValue matchValue)
+    {
+        if (matchValue == MatchValue.None)
+        {
+            return null;
+        }
+
+        foreach (GameObject go in gamePiecePrefabs)
+        {
+            GamePiece piece = go.GetComponent<GamePiece>();
+
+            if (piece != null)
+            {
+                if (piece.matchValue == matchValue)
+                {
+                    return go;
+                }
+            }
+        }
+
+        return null;
+
+    }
+
+
+
+
+
+
+
 }

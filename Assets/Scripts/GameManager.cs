@@ -31,6 +31,17 @@ public class GameManager : Singleton<GameManager> {
     // is the game over?
 	bool m_isGameOver = false;
 
+    public bool IsGameOver
+    {
+        get {
+            return m_isGameOver;
+        }
+        set
+        {
+            m_isGameOver = value;
+        }
+    }
+
     // do we have a winner?
 	bool m_isWinner = false;
 
@@ -90,6 +101,10 @@ public class GameManager : Singleton<GameManager> {
 	{
 		yield return StartCoroutine ("StartGameRoutine");
 		yield return StartCoroutine ("PlayGameRoutine");
+
+        // wait for board to refill
+        yield return StartCoroutine("WaitForBoardRoutine", 0.5f);
+
 		yield return StartCoroutine ("EndGameRoutine");
 	}
 
@@ -160,6 +175,24 @@ public class GameManager : Singleton<GameManager> {
 			yield return null;
 		}
 	}
+
+    IEnumerator WaitForBoardRoutine(float delay = 0f)
+    {
+        if (m_board != null)
+        {
+            // this accounts for the swapTime delay in the Board's SwitchTilesRoutine BEFORE ClearAndRefillRoutine is invoked
+            yield return new WaitForSeconds(m_board.swapTime);
+
+            // wait while the Board is refilling
+            while (m_board.isRefilling)
+            {
+                yield return null;
+            }
+        }
+
+        // extra delay before we go to the EndGameRoutine
+        yield return new WaitForSeconds(delay);
+    }
 
     // coroutine for the end of the level
 	IEnumerator EndGameRoutine()
