@@ -1,27 +1,34 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ContentModelStore">
-    <e p="C:\Users\mfk\.Rider2019.2\system\extResources" t="IncludeRecursive" />
-    <e p="C:\Users\mfk\.Rider2019.2\system\resharper-host\local\Transient\ReSharperHost\v192\SolutionCaches\_matchMe.490071497.00" t="ExcludeRecursive" />
+    <e p="C:\Users\mfk\.Rider2019.3\system\extResources" t="IncludeRecursive" />
+    <e p="C:\Users\mfk\.Rider2019.3\system\resharper-host\local\Transient\ReSharperHost\v193\SolutionCaches\_matchMe.490071497.00" t="ExcludeRecursive" />
     <e p="D:\ProjeDosyalari\Unity\matchMe" t="IncludeRecursive">
       <e p="Assembly-CSharp.csproj" t="IncludeRecursive" />
       <e p="Assets" t="Include">
         <e p="Scripts" t="Include">
           <e p="Board.cs" t="Include" />
           <e p="BoardDeadlock.cs" t="Include" />
+          <e p="BoardShuffler.cs" t="Include" />
           <e p="Bomb.cs" t="Include" />
           <e p="Collectible.cs" t="Include" />
           <e p="GameManager.cs" t="Include" />
           <e p="GamePiece.cs" t="Include" />
+          <e p="LevelGoal.cs" t="Include" />
+          <e p="LevelGoalScored.cs" t="Include" />
+          <e p="LevelGoalTimed.cs" t="Include" />
           <e p="MessageWindow.cs" t="Include" />
           <e p="ParticleManager.cs" t="Include" />
           <e p="ParticlePlayer.cs" t="Include" />
           <e p="RectXformMover.cs" t="Include" />
           <e p="ScoreManager.cs" t="Include" />
+          <e p="ScoreMeter.cs" t="Include" />
+          <e p="ScoreStar.cs" t="Include" />
           <e p="ScreenFader.cs" t="Include" />
           <e p="Singleton.cs" t="Include" />
           <e p="SoundManager.cs" t="Include" />
           <e p="Tile.cs" t="Include" />
+          <e p="Timer.cs" t="Include" />
         </e>
       </e>
       <e p="matchMe.sln" t="IncludeFlat" />

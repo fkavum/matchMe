@@ -37,7 +37,7 @@ public class SoundManager : Singleton<SoundManager>
     // this replaces the native PlayClipAtPoint to play an AudioClip at a world space position
     // this allows a third volume parameter to specify the volume unlike the native version
     // and allows for some random variation so the sound is less monotonous
-    public AudioSource PlayClipAtPoint(AudioClip clip, Vector3 position, float volume = 1f)
+    public AudioSource PlayClipAtPoint(AudioClip clip, Vector3 position, float volume = 1f,bool  randomizePitch = true)
     {
         if (clip != null)
         {
@@ -49,10 +49,11 @@ public class SoundManager : Singleton<SoundManager>
             AudioSource source = go.AddComponent<AudioSource>();
             source.clip = clip;
 
+            if(randomizePitch){
             // change the pitch of the sound within some variation
             float randomPitch = Random.Range(lowPitch, highPitch);
             source.pitch = randomPitch;
-
+            }
             // set the volume
             source.volume = volume;
 
