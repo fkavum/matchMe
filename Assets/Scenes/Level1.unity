@@ -3358,7 +3358,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   scoreStars: 0
-  scoreGoals: e8030000d0070000b80b0000
+  scoreGoals: 320000006400000096000000
   movesLeft: 30
   timeLeft: 15
   timer: {fileID: 2016261880}
@@ -3414,11 +3414,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   timeLeftText: {fileID: 1428349938}
   clockImage: {fileID: 1270851912}
+  paused: 0
   flashTimeLimit: 10
   flashBeep: {fileID: 8300000, guid: 3235eb35ca4de45b9901ea9ccbff8d77, type: 3}
   flashInterval: 1
   flashColor: {r: 1, g: 0, b: 0, a: 1}
-  paused: 0
 --- !u!1 &2048609619
 GameObject:
   m_ObjectHideFlags: 0
